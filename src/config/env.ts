@@ -16,6 +16,7 @@ export const proxyPrefixes = {
     baidu: import.meta.env.VITE_PROXY_BAIDU ?? '/baidu',
 };
 
-export const defaultBasemapId = import.meta.env.VITE_DEFAULT_BASEMAP ?? 'tianditu-imagery';
+export const defaultBasemapId = import.meta.env.VITE_DEFAULT_BASEMAP ?? 'mapbox-streets';
+
 
 
