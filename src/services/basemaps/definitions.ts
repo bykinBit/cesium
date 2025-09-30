@@ -161,21 +161,46 @@ const createGaodeImagery = async (ctx: BasemapHookContext, style: 'vector' | 'sa
     const { Cesium, env } = ctx;
     const tilingScheme = new Cesium.WebMercatorTilingScheme();
 
+    const styleCode = style === 'satellite' ? '6' : '6';
+    const queryParts = [`style=${styleCode}`, 'x={x}', 'y={y}', 'z={z}'];
+
     if (env.gaodeKey) {
-        const styleCode = style === 'satellite' ? '6' : '8';
-        const query = `style=${styleCode}&x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&key=${env.gaodeKey}`;
-        return new Cesium.UrlTemplateImageryProvider({
-            url: buildUrl(env.proxyPrefixes.gaode ?? '', `/appmaptile?${query}`),
-            tilingScheme,
-            maximumLevel: 18,
-            subdomains: ['01', '02', '03', '04'],
-        });
+        queryParts.push(`key=${env.gaodeKey}`);
     }
 
-    const restStyle = style === 'satellite' ? '6' : '7';
+    const query = queryParts.join('&');
+
+    const templateUrl = env.proxyPrefixes.gaode
+        ? buildUrl(env.proxyPrefixes.gaode ?? '', `/appmaptile?${query}`)
+        : `https://webst0{s}.is.autonavi.com/appmaptile?${query}`;
+
     return new Cesium.UrlTemplateImageryProvider({
-        url: `https://webst0${'{'}s{'}'}.is.autonavi.com/appmaptile?style=${restStyle}&x={x}&y={y}&z={z}`,
-        subdomains: ['1', '2', '3', '4'],
+        url: templateUrl,
+        subdomains: ["1", "2", "3", "4"],
+        tilingScheme,
+        maximumLevel: 18,
+    });
+};
+
+const createGaodeRoadOverlay = async (ctx: BasemapHookContext) => {
+    const { Cesium, env } = ctx;
+    const tilingScheme = new Cesium.WebMercatorTilingScheme();
+
+    const queryParts = ['style=8','x={x}', 'y={y}', 'z={z}', 'lang=zh_cn', 'size=1'];
+
+    if (env.gaodeKey) {
+        queryParts.push(`key=${env.gaodeKey}`);
+    }
+
+    const query = queryParts.join('&');
+
+    const templateUrl = env.proxyPrefixes.gaode
+        ? buildUrl(env.proxyPrefixes.gaode ?? '', `/appmaptile?${query}`)
+        : `https://webst02.is.autonavi.com/appmaptile?${query}`;
+
+    return new Cesium.UrlTemplateImageryProvider({
+        url: templateUrl,
+        subdomains: ["1", "2", "3", "4"],
         tilingScheme,
         maximumLevel: 18,
     });
@@ -260,7 +285,8 @@ const basemapEntries: Array<{ option: BasemapOption; hook: BasemapHook }> = [
         option: { id: 'gaode-vector', label: 'Gaode Vector', group: 'China' },
         hook: createBasemapHook(
             [
-                { id: 'gaode-vector', create: (ctx) => createGaodeImagery(ctx, 'vector') },
+                { id: 'gaode-vector-base', create: (ctx) => createGaodeImagery(ctx, 'vector') },
+                { id: 'gaode-vector-road', create: (ctx) => createGaodeRoadOverlay(ctx) },
             ],
             async ({ Cesium }) => new Cesium.EllipsoidTerrainProvider(),
         ),
@@ -290,3 +316,4 @@ export const basemapHookMap: Record<string, BasemapHook> = basemapEntries.reduce
     acc[entry.option.id] = entry.hook;
     return acc;
 }, {} as Record<string, BasemapHook>);
+

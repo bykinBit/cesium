@@ -16,7 +16,7 @@ const createProxy = () => ({
     rewrite: (path) => path.replace(/^\/mapbox/, ''),
   },
   '/gaode': {
-    target: 'https://webrd02.is.autonavi.com',
+    target: 'https://webst03.is.autonavi.com',
     changeOrigin: true,
     secure: true,
     rewrite: (path) => path.replace(/^\/gaode/, ''),
@@ -42,3 +42,4 @@ export default defineConfig({
     proxy: createProxy(),
   },
 })
+

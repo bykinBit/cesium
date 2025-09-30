@@ -1,6 +1,6 @@
 /// <reference path='../types/env.d.ts' />
 export const mapTokens = {
-    tiandituToken: import.meta.env.VITE_TDT_TOKEN ?? '',
+    tiandituToken: import.meta.env.VITE_TDT_TOKEN ?? 'd228841505c60647d5f9af5e891a57af',
     enableTiandituTerrain: (import.meta.env.VITE_ENABLE_TDT_TERRAIN ?? 'false') === 'true',
     mapboxToken: import.meta.env.VITE_MAPBOX_TOKEN ?? '',
     gaodeKey: import.meta.env.VITE_GAODE_KEY ?? '',
@@ -16,7 +16,8 @@ export const proxyPrefixes = {
     baidu: import.meta.env.VITE_PROXY_BAIDU ?? '/baidu',
 };
 
-export const defaultBasemapId = import.meta.env.VITE_DEFAULT_BASEMAP ?? 'mapbox-streets';
+export const defaultBasemapId = import.meta.env.VITE_DEFAULT_BASEMAP ?? 'gaode-vector';
+
 
 
 

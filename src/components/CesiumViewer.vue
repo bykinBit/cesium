@@ -30,6 +30,7 @@ const basemapOptions = ref([])
 const basemapLoading = ref(false)
 const basemapError = ref('')
 
+const ALLOWED_BASEMAP_IDS = new Set(['gaode-vector'])
 const TIANDITU_BASEMAP_IDS = new Set(['tianditu-imagery'])
 let tiandituTerrainProvider = null
 let tiandituTerrainActive = false
@@ -331,10 +332,17 @@ onMounted(async () => {
     }
 
     basemapSwitcher = useBasemapSwitcher({ Cesium, viewer: viewerInstance, env })
-    basemapOptions.value = basemapSwitcher.options
-    if (!basemapOptions.value.some((option) => option.id === selectedBasemapId.value)) {
-        selectedBasemapId.value = basemapOptions.value[0]?.id ?? selectedBasemapId.value
+    basemapOptions.value = basemapSwitcher.options.filter((option) => ALLOWED_BASEMAP_IDS.has(option.id))
+
+    if (basemapOptions.value.length === 0) {
+        basemapError.value = 'No available basemap providers.'
+        return
     }
+
+    if (!ALLOWED_BASEMAP_IDS.has(selectedBasemapId.value)) {
+        selectedBasemapId.value = basemapOptions.value[0].id
+    }
+
     await applyBasemap(selectedBasemapId.value)
 
     const handleMorphComplete = () => {
@@ -358,6 +366,12 @@ onMounted(async () => {
 
 watch(selectedBasemapId, (next, prev) => {
     if (next === prev) return
+
+    if (!ALLOWED_BASEMAP_IDS.has(next)) {
+        selectedBasemapId.value = basemapOptions.value[0]?.id ?? next
+        return
+    }
+
     void applyBasemap(next)
 })
 
