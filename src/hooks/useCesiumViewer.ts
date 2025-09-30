@@ -1,36 +1,44 @@
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, ref, type Ref } from 'vue';
 
-export interface UseCesiumViewerOptions extends Partial<import('cesium').Viewer.ConstructorOptions> {}
+import type { Viewer } from 'cesium';
+
+export type UseCesiumViewerOptions = Partial<Viewer.ConstructorOptions>;
 
 export interface UseCesiumViewerResult {
-    viewer: import('vue').Ref<import('cesium').Viewer | null>;
-    isReady: import('vue').Ref<boolean>;
-    initViewer: (container: string | HTMLElement, options?: UseCesiumViewerOptions) => Promise<import('cesium').Viewer>;
+    viewer: Ref<Viewer | null>;
+    isReady: Ref<boolean>;
+    initViewer: (container: string | Element, options?: UseCesiumViewerOptions) => Promise<Viewer>;
     destroyViewer: () => void;
 }
 
 export function useCesiumViewer(Cesium: typeof import('cesium')): UseCesiumViewerResult {
-    const viewer = ref<import('cesium').Viewer | null>(null);
+    const viewer = ref<Viewer | null>(null);
     const isReady = ref(false);
 
-    const initViewer = async (container: string | HTMLElement, options: UseCesiumViewerOptions = {}) => {
+    const initViewer = async (container: string | Element, options: UseCesiumViewerOptions = {}): Promise<Viewer> => {
         if (viewer.value) {
             return viewer.value;
         }
 
-        const target = typeof container === 'string' ? container : (container as HTMLElement);
+        const target = container;
+
         const instance = new Cesium.Viewer(target, {
-            imageryProvider: false,
+            terrainProvider:undefined,
+            timeline: false,
+            infoBox:false,
+            animation:false,
+            baseLayer: false,
             baseLayerPicker: false,
             ...options,
         });
-
+        // 添加瓦片坐标信息
+        instance.imageryLayers.addImageryProvider(new Cesium.TileCoordinatesImageryProvider());
         viewer.value = instance;
         isReady.value = true;
         return instance;
     };
 
-    const destroyViewer = () => {
+    const destroyViewer = (): void => {
         if (viewer.value && !viewer.value.isDestroyed()) {
             viewer.value.destroy();
         }

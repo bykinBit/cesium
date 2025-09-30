@@ -1,6 +1,7 @@
 let hasLoggedTiandituTerrainSkip = false;
 
 import type { BasemapEnv, BasemapHook, BasemapHookContext, BasemapHookResult, BasemapOption } from './types';
+import { BaiduImageryProvider } from './BaiduImageryProvider';
 
 const DEFAULT_PROXY_PREFIXES: Required<NonNullable<BasemapEnv['proxyPrefixes']>> = {
     tianditu: '/td',
@@ -110,133 +111,14 @@ const setTerrainProvider = async (
     };
 };
 
-const createTiandituImagery = async (ctx: BasemapHookContext, layer: string, maximumLevel = 18) => {
+const createBaiduImagery = async (ctx: BasemapHookContext) => {
     const { Cesium, env } = ctx;
-    return new Cesium.UrlTemplateImageryProvider({
-        url: buildUrl(env.proxyPrefixes.tianditu ?? '', `/DataServer?T=${layer}&x={x}&y={y}&l={z}&tk=${env.tiandituToken}`),
-        tilingScheme: new Cesium.WebMercatorTilingScheme(),
-        maximumLevel,
-    });
-};
-
-const createTiandituTerrain = async (ctx: BasemapHookContext) => {
-    const { Cesium, env } = ctx;
-
-    const createFallback = async (reason?: string, error?: unknown, options?: { silent?: boolean }) => {
-        if (!options?.silent && reason && !hasLoggedTiandituTerrainSkip) {
-            console.info(reason, error ?? '');
-            hasLoggedTiandituTerrainSkip = true;
-        }
-        if (typeof Cesium.createWorldTerrainAsync === 'function') {
-            try {
-                return await Cesium.createWorldTerrainAsync();
-            } catch (worldTerrainError) {
-                console.warn('Falling back to ellipsoid terrain because world terrain failed.', worldTerrainError);
-            }
-        }
-        return new Cesium.EllipsoidTerrainProvider();
-    };
-
-    if (!env.enableTiandituTerrain) {
-        return createFallback('Tianditu terrain disabled by configuration.', undefined, { silent: true });
-    }
-
-    return createFallback('Tianditu terrain is currently not supported due to CORS limitations.', undefined, { silent: true });
-};
-
-const createMapboxImagery = async (ctx: BasemapHookContext, styleId: string) => {
-    const { Cesium, env } = ctx;
-    if (!env.mapboxToken) {
-        console.warn('Mapbox token is missing.');
-        return null;
-    }
-    return new Cesium.UrlTemplateImageryProvider({
-        url: buildUrl(env.proxyPrefixes.mapbox ?? '', `/styles/v1/${styleId}/tiles/256/{z}/{x}/{y}@2x?access_token=${env.mapboxToken}`),
-        tilingScheme: new Cesium.WebMercatorTilingScheme(),
-        maximumLevel: 19,
-    });
-};
-
-const createGaodeImagery = async (ctx: BasemapHookContext, style: 'vector' | 'satellite' = 'vector') => {
-    const { Cesium, env } = ctx;
-    const tilingScheme = new Cesium.WebMercatorTilingScheme();
-
-    const styleCode = style === 'satellite' ? '6' : '6';
-    const queryParts = [`style=${styleCode}`, 'x={x}', 'y={y}', 'z={z}'];
-
-    if (env.gaodeKey) {
-        queryParts.push(`key=${env.gaodeKey}`);
-    }
-
-    const query = queryParts.join('&');
-
-    const templateUrl = env.proxyPrefixes.gaode
-        ? buildUrl(env.proxyPrefixes.gaode ?? '', `/appmaptile?${query}`)
-        : `https://webst0{s}.is.autonavi.com/appmaptile?${query}`;
-
-    return new Cesium.UrlTemplateImageryProvider({
-        url: templateUrl,
-        subdomains: ["1", "2", "3", "4"],
-        tilingScheme,
-        maximumLevel: 18,
-    });
-};
-
-const createGaodeRoadOverlay = async (ctx: BasemapHookContext) => {
-    const { Cesium, env } = ctx;
-    const tilingScheme = new Cesium.WebMercatorTilingScheme();
-
-    const queryParts = ['style=8','x={x}', 'y={y}', 'z={z}', 'lang=zh_cn', 'size=1'];
-
-    if (env.gaodeKey) {
-        queryParts.push(`key=${env.gaodeKey}`);
-    }
-
-    const query = queryParts.join('&');
-
-    const templateUrl = env.proxyPrefixes.gaode
-        ? buildUrl(env.proxyPrefixes.gaode ?? '', `/appmaptile?${query}`)
-        : `https://webst02.is.autonavi.com/appmaptile?${query}`;
-
-    return new Cesium.UrlTemplateImageryProvider({
-        url: templateUrl,
-        subdomains: ["1", "2", "3", "4"],
-        tilingScheme,
-        maximumLevel: 18,
-    });
-};
-
-const createTencentImagery = async (ctx: BasemapHookContext, type: 'vector' | 'satellite' = 'vector') => {
-    const { Cesium, env } = ctx;
-    if (!env.tencentKey) {
-        console.warn('Tencent key is missing.');
-        return null;
-    }
-    const styleId = type === 'satellite' ? 'sate' : 'vector';
-    const query = `z={z}&x={x}&y={y}&type=tile&style=${styleId}&key=${env.tencentKey}`;
-    return new Cesium.UrlTemplateImageryProvider({
-        url: buildUrl(env.proxyPrefixes.tencent ?? '', `/rtt/?${query}`),
-        tilingScheme: new Cesium.WebMercatorTilingScheme(),
-        maximumLevel: 18,
-    });
-};
-
-const createBaiduImagery = async (ctx: BasemapHookContext, style = 'midnight') => {
-    const { Cesium, env } = ctx;
-    if (!env.baiduAk) {
-        console.warn('Baidu AK is missing.');
-        return null;
-    }
 
     const template = env.proxyPrefixes.baidu
-        ? buildUrl(env.proxyPrefixes.baidu ?? '', `/customimage/tile?x={x}&y={y}&z={z}&scale=1&customid=${style}&ak=${env.baiduAk}`)
-        : `https://api.map.baidu.com/customimage/tile?x={x}&y={y}&z={z}&scale=1&customid=${style}&ak=${env.baiduAk}`;
+        ? buildUrl(env.proxyPrefixes.baidu ?? '', `/starpic/?qt=satepc&u=x={x};y={y};z={z};v=009;type=sate&fm=46&app=webearth2&udt=20250928`)
+        : 'https://maponline1.bdimg.com/starpic/?qt=satepc&u=x={x};y={y};z={z};v=009;type=sate&fm=46&app=webearth2&udt=20250928';
 
-    return new Cesium.UrlTemplateImageryProvider({
-        url: template,
-        tilingScheme: new Cesium.WebMercatorTilingScheme(),
-        maximumLevel: 18,
-    });
+    return new BaiduImageryProvider({ Cesium, url: template, minimumLevel: 3, maximumLevel: 19, zoomOffset: 3 });
 };
 
 const createBasemapHook = (
@@ -258,53 +140,10 @@ const createBasemapHook = (
 
 const basemapEntries: Array<{ option: BasemapOption; hook: BasemapHook }> = [
     {
-        option: { id: 'tianditu-imagery', label: 'Tianditu Imagery', group: 'China' },
-        hook: createBasemapHook(
-            [
-                { id: 'td-img', create: (ctx) => createTiandituImagery(ctx, 'img_w') },
-                { id: 'td-ibo', create: (ctx) => createTiandituImagery(ctx, 'ibo_w', 12) },
-            ],
-            createTiandituTerrain,
-        ),
-    },
-    {
-        option: { id: 'mapbox-streets', label: 'Mapbox Streets', group: 'Global' },
-        hook: createBasemapHook(
-            [
-                { id: 'mapbox-streets', create: (ctx) => createMapboxImagery(ctx, 'mapbox/streets-v11') },
-            ],
-            async ({ Cesium }) => {
-                if (typeof Cesium.createWorldTerrainAsync === 'function') {
-                    return Cesium.createWorldTerrainAsync();
-                }
-                return new Cesium.EllipsoidTerrainProvider();
-            },
-        ),
-    },
-    {
-        option: { id: 'gaode-vector', label: 'Gaode Vector', group: 'China' },
-        hook: createBasemapHook(
-            [
-                { id: 'gaode-vector-base', create: (ctx) => createGaodeImagery(ctx, 'vector') },
-                { id: 'gaode-vector-road', create: (ctx) => createGaodeRoadOverlay(ctx) },
-            ],
-            async ({ Cesium }) => new Cesium.EllipsoidTerrainProvider(),
-        ),
-    },
-    {
         option: { id: 'baidu-satellite', label: 'Baidu Imagery', group: 'China' },
         hook: createBasemapHook(
             [
-                { id: 'baidu-satellite', create: (ctx) => createBaiduImagery(ctx, 'midnight') },
-            ],
-            async ({ Cesium }) => new Cesium.EllipsoidTerrainProvider(),
-        ),
-    },
-    {
-        option: { id: 'tencent-vector', label: 'Tencent Vector', group: 'China' },
-        hook: createBasemapHook(
-            [
-                { id: 'tencent-vector', create: (ctx) => createTencentImagery(ctx, 'vector') },
+                { id: 'baidu-satellite', create: (ctx) => createBaiduImagery(ctx) },
             ],
             async ({ Cesium }) => new Cesium.EllipsoidTerrainProvider(),
         ),
@@ -316,4 +155,3 @@ export const basemapHookMap: Record<string, BasemapHook> = basemapEntries.reduce
     acc[entry.option.id] = entry.hook;
     return acc;
 }, {} as Record<string, BasemapHook>);
-

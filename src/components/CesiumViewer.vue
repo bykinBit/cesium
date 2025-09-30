@@ -2,7 +2,7 @@
     <div class="viewer-wrapper">
         <div id="cesium-container"></div>
         <div class="basemap-control">
-            <label class="basemap-control__label" for="basemap-select">µ×Í¼</label>
+            <label class="basemap-control__label" for="basemap-select">ï¿½ï¿½Í¼</label>
             <select
                 id="basemap-select"
                 class="basemap-control__select"
@@ -12,7 +12,7 @@
                     {{ option.label }}
                 </option>
             </select>
-            <span v-if="basemapLoading" class="basemap-status">¼ÓÔØÖÐ¡­</span>
+            <span v-if="basemapLoading" class="basemap-status">ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½</span>
             <span v-else-if="basemapError" class="basemap-status basemap-status--error">{{ basemapError }}</span>
         </div>
     </div>
@@ -24,13 +24,14 @@ import Cesium, { GeoWTFS as GeoWTFSModule, ensureCesiumExt } from '../plugins/ce
 import { useCesiumViewer } from '../hooks/useCesiumViewer'
 import { useBasemapSwitcher } from '../hooks/useBasemapSwitcher'
 import { mapTokens, proxyPrefixes, defaultBasemapId } from '../config/env'
+import { BaiduImageryProvider } from '../services/basemaps/BaiduImageryProvider'
 
 const selectedBasemapId = ref(defaultBasemapId)
 const basemapOptions = ref([])
 const basemapLoading = ref(false)
 const basemapError = ref('')
 
-const ALLOWED_BASEMAP_IDS = new Set(['gaode-vector'])
+const ALLOWED_BASEMAP_IDS = new Set(['baidu-satellite'])
 const TIANDITU_BASEMAP_IDS = new Set(['tianditu-imagery'])
 let tiandituTerrainProvider = null
 let tiandituTerrainActive = false
@@ -315,7 +316,17 @@ onMounted(async () => {
     ensureCesiumExt()
     const viewerInstance = await initViewer('cesium-container')
 
-    viewerInstance.imageryLayers.removeAll()
+    viewerInstance.imageryLayers.addImageryProvider(
+        new BaiduImageryProvider({
+            Cesium,
+            url: 'https://maponline0.bdimg.com/tile/?qt=vtile&x={x}&y={y}&z={z}&styles=pl&scaler=1&udt=20250928',
+            minimumLevel: 3,
+            maximumLevel: 19,
+            zoomOffset: 0,
+        }),
+    )
+
+    return
 
     if (viewerInstance._cesiumWidget?._creditContainer) {
         viewerInstance._cesiumWidget._creditContainer.style.display = 'none'
