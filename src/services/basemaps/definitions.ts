@@ -11,7 +11,7 @@ const DEFAULT_PROXY_PREFIXES: Required<NonNullable<BasemapEnv['proxyPrefixes']>>
 };
 
 const DEFAULT_ENV: Required<BasemapEnv> = {
-    tiandituToken: 'd228841505c60647d5f9af5e891a57af',
+    tiandituToken: '',
     enableTiandituTerrain: false,
     mapboxToken: '',
     gaodeKey: '',
